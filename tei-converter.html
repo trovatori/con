@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TEI Converter — Notazione compatta ↔ XML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent:  #a03f33;
+    --accent2: #3a6b8a;
+    --bg:      #fbf9f4;
+    --panel:   #f5f3ee;
+    --text:    #1a1410;
+    --muted:   #6b7280;
+    --border:  #e2ddd6;
+    --mono:    "JetBrains Mono", monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Source Sans 3", sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--text); color: white;
+    padding: 18px 32px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .hd-title {
+    font-family: "Source Serif 4", serif;
+    font-size: 1.15rem; font-weight: 300; font-style: italic;
+    letter-spacing: 0.01em;
+  }
+  .hd-title strong { font-style: normal; font-weight: 700; color: #e8c4be; }
+  .hd-sub {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #888;
+  }
+
+  /* ── SYNTAX GUIDE ── */
+  .guide {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  }
+  .guide-label {
+    font-size: 8px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted); flex-shrink: 0;
+  }
+  .guide-items { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+  .guide-item {
+    font-size: 11px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .guide-item code {
+    font-family: var(--mono); font-size: 10px;
+    background: white; border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 3px; color: var(--text);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .workspace {
+    flex: 1; display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+  }
+
+  /* ── MODE TABS ── */
+  .mode-bar {
+    grid-column: 1 / -1;
+    display: flex; border-bottom: 1px solid var(--border);
+    background: white;
+  }
+  .mode-btn {
+    padding: 10px 24px;
+    font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    background: none; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: -1px;
+  }
+  .mode-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .mode-btn:hover:not(.active) { color: var(--text); }
+  .mode-arrow {
+    font-size: 14px; font-weight: 300; color: var(--border);
+    padding: 10px 8px; line-height: 1;
+    display: flex; align-items: center;
+  }
+  .mode-arrow.active { color: var(--accent); }
+
+  /* ── PANELS ── */
+  .panel {
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .panel:last-child { border-right: none; }
+  .panel-head {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+  }
+  .panel-label {
+    font-size: 8px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .panel-actions { display: flex; gap: 6px; }
+  .btn {
+    padding: 4px 10px; border-radius: 4px; font-size: 9px;
+    font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    border: 1px solid var(--border); background: white; color: var(--muted);
+    cursor: pointer; transition: all .15s; font-family: "Source Sans 3", sans-serif;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .btn.primary:hover { background: #8a3329; border-color: #8a3329; }
+  .btn.secondary {
+    background: var(--accent2); color: white; border-color: var(--accent2);
+  }
+  .btn.secondary:hover { background: #2e5670; border-color: #2e5670; }
+
+  textarea, .output-box {
+    flex: 1; min-height: 0;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.75;
+    padding: 20px; resize: none; border: none; outline: none;
+    background: white; color: var(--text);
+    overflow-y: auto;
+  }
+  textarea::placeholder { color: #bbb; }
+  textarea { width: 100%; }
+
+  .output-box {
+    white-space: pre-wrap; word-break: break-word;
+    color: #2a2a2a; font-style: normal;
+  }
+
+  /* ── SYNTAX HIGHLIGHT ── */
+  .xt { color: #888; }           /* tag */
+  .xa { color: #3a6b8a; }        /* attribute */
+  .xv { color: #7a4f00; }        /* value */
+  .xc { color: #999; font-style: italic; } /* comment */
+  .xl { color: var(--accent); font-weight: 600; } /* lem */
+  .xr { color: #3a6b8a; }        /* rdg */
+  .xn { color: #555; }           /* text node */
+
+  /* compact highlight */
+  .ck-lem  { color: var(--accent); font-weight: 700; }
+  .ck-rdg  { color: var(--accent2); }
+  .ck-app  { color: #888; }
+  .ck-wit  { color: #3a8a5a; font-weight: 600; }
+  .ck-tipe { color: #b07a00; }
+
+  /* ── MESSAGES ── */
+  .msg-bar {
+    grid-column: 1 / -1;
+    padding: 8px 20px; font-size: 11px; font-weight: 600;
+    display: none; align-items: center; gap: 8px;
+  }
+  .msg-bar.ok  { background: #edfaf3; color: #1a6b3a; border-top: 1px solid #b8ecd0; display: flex; }
+  .msg-bar.err { background: #fdf0ee; color: #8a2a1a; border-top: 1px solid #f5c8c0; display: flex; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border); background: var(--panel);
+    padding: 10px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #bbb; flex-shrink: 0;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+  /* ── RICH TEXT EDITOR ── */
+  .rte-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .rte-toolbar {
+    display: flex; align-items: center; gap: 4px; padding: 5px 10px;
+    border-bottom: 1px solid var(--border); background: var(--panel);
+    flex-shrink: 0; flex-wrap: wrap;
+  }
+  .rte-toolbar.hidden { display: none; }
+  .rte-btn {
+    width: 26px; height: 26px; border-radius: 3px;
+    font-size: 12px; font-weight: 700; font-family: "Source Serif 4", serif;
+    border: 1px solid var(--border); background: white; color: var(--muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .rte-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .rte-btn.active { background: var(--accent-light, rgba(160,63,51,0.08)); border-color: var(--accent); color: var(--accent); }
+  .rte-divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+  .rte-mode-toggle {
+    display: flex; gap: 0; margin-left: auto;
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .rte-mode-btn {
+    padding: 3px 10px; font-size: 8px; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; border: none; background: white; color: var(--muted);
+    cursor: pointer; transition: all .15s;
+  }
+  .rte-mode-btn.active { background: var(--accent); color: white; }
+  .rte-mode-btn:not(.active):hover { background: var(--panel); }
+  #editor-area {
+    flex: 1; min-height: 0; overflow-y: auto;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.75;
+    padding: 20px; outline: none; white-space: pre-wrap; word-break: break-word;
+    color: var(--text); background: white;
+  }
+  #editor-area:empty::before {
+    content: attr(data-placeholder);
+    color: #bbb; pointer-events: none;
+  }
+  #editor-area b, #editor-area strong { font-weight: 700; }
+  #editor-area i, #editor-area em { font-style: italic; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(26,20,16,0.55); backdrop-filter: blur(3px);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; width: 520px; max-width: 95vw;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-title {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; color: var(--muted); line-height: 1;
+    padding: 0 4px; transition: color .15s;
+  }
+  .modal-close:hover { color: var(--accent); }
+  .modal-body { padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .field label span { color: var(--accent); margin-left: 3px; }
+  .field input, .field textarea {
+    font-family: "Source Sans 3", sans-serif;
+    font-size: 13px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: white; color: var(--text);
+    transition: border-color .15s; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .field textarea { min-height: 72px; }
+  .modal-foot {
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    background: var(--panel);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-title"><strong>TEI Converter</strong> — notazione compatta ↔ XML</div>
+  <a href="tei-converter-guida.html"
+     style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#888;text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .15s"
+     onmouseover="this.style.color='#e8c4be'" onmouseout="this.style.color='#888'">
+    Guida →
+  </a>
+</header>
+
+<!-- SYNTAX GUIDE -->
+<div class="guide">
+  <span class="guide-label">Sintassi</span>
+  <div class="guide-items">
+    <div class="guide-item"><code>{A: lemma}</code> lemma del testimone A</div>
+    <div class="guide-item"><code>(B: variante)</code> variante sostanziale di B</div>
+    <div class="guide-item"><code>(B*: variante)</code> variante ortografica di B</div>
+    <div class="guide-item"><code>(B, C: variante)</code> B e C recano la stessa variante sostanziale</div>
+    <div class="guide-item"><code>(B*, C*: variante)</code> B e C recano la stessa variante ortografica</div>
+    <div class="guide-item"><code>{A: lemma (B: var1) (C: var2)}</code> B e C recano varianti distinte: una parentesi per testimone</div>
+    <div class="guide-item"><code>{?: lemma (A: variante1) (B: variante2)}</code> lemma congetturale: i testimoni recano varianti non eleggibili a testo</div>
+    <div class="guide-item"><code>(B: -)</code> B omette (lacuna o omissione)</div>
+    <div class="guide-item"><code>[parola: testo della nota]</code> nota di commento a una parola o segmento</div>
+    <div class="guide-item"><code>{A: lemma (B: var)}[: testo della nota]</code> nota di commento a un lemma (seg vuoto dopo l'app)</div>
+    <div class="guide-item">→ ogni riga = <code>&lt;l n="…"&gt;</code> · note raccolte in fondo al div</div>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- MODE BAR -->
+  <div class="mode-bar">
+    <button class="mode-btn active" id="btn-compact2tei" onclick="setMode('compact2tei')">
+      Compatta → TEI
+    </button>
+    <span class="mode-arrow active" id="arr1">→</span>
+    <button class="mode-btn" id="btn-tei2compact" onclick="setMode('tei2compact')">
+      TEI → Compatta
+    </button>
+    <span class="mode-arrow" id="arr2">→</span>
+    <div style="flex:1"></div>
+  </div>
+
+  <!-- PANEL LEFT: INPUT -->
+  <div class="panel" id="panel-left">
+    <div class="panel-head">
+      <span class="panel-label" id="label-left">Notazione compatta</span>
+      <div class="panel-actions">
+        <button class="btn" onclick="clearLeft()">Pulisci</button>
+        <button class="btn" onclick="loadExample()">Esempio</button>
+        <button class="btn primary" onclick="convert()">Converti →</button>
+      </div>
+    </div>
+    <div class="rte-wrap">
+      <!-- Toolbar rich-text (visibile solo in modalità compatta→TEI) -->
+      <div class="rte-toolbar" id="rte-toolbar">
+        <button class="rte-btn" id="btn-bold"   title="Grassetto (Ctrl+B)"  onclick="rteFormat('bold')"><b>B</b></button>
+        <button class="rte-btn" id="btn-italic" title="Corsivo (Ctrl+I)"    onclick="rteFormat('italic')"><i>I</i></button>
+        <div class="rte-divider"></div>
+        <span style="font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Modalità</span>
+        <div class="rte-mode-toggle">
+          <button class="rte-mode-btn active" id="mode-poetry" onclick="setTextMode('poetry')">Poesia</button>
+          <button class="rte-mode-btn"        id="mode-prose"  onclick="setTextMode('prose')">Prosa</button>
+        </div>
+      </div>
+      <!-- Editor contenteditable -->
+      <div id="editor-area" contenteditable="true" spellcheck="false"
+           data-placeholder="Inserisci il testo con notazione compatta…&#10;&#10;Ogni riga = un verso &lt;l&gt;. Riga vuota = nuova strofa &lt;lg&gt;.&#10;In modalità Prosa: paragrafo separato da riga vuota = &lt;p&gt;."></div>
+    </div>
+  </div>
+
+  <!-- PANEL RIGHT: OUTPUT -->
+  <div class="panel" id="panel-right">
+    <div class="panel-head">
+      <span class="panel-label" id="label-right">TEI / XML</span>
+      <div class="panel-actions">
+        <button class="btn" onclick="copyOutput()">Copia</button>
+        <button class="btn secondary" id="btn-download" onclick="downloadOutput()">Scarica .xml</button>
+        <button class="btn secondary" id="btn-export-tei" onclick="openNewXml()" style="display:none">Esporta come TEI</button>
+      </div>
+    </div>
+    <div class="output-box" id="output-area"></div>
+  </div>
+
+  <!-- MESSAGE BAR -->
+  <div class="msg-bar" id="msg-bar"></div>
+
+</div>
+
+<footer>
+  <span>Notazione: <code style="font-family:JetBrains Mono,monospace;color:#888">{WIT: lem (WIT~: rdg-ort) (WIT: rdg-sost)}</code></span>
+  <a href="tei-converter-guida.html" style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#aaa;text-decoration:none">Guida all'uso →</a>
+  <span>TEI P5 · app / lem / rdg</span>
+</footer>
+
+<!-- MODAL NUOVO XML -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Crea nuovo file TEI/XML</span>
+      <button class="modal-close" onclick="closeNewXml()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Titolo <span>*</span></label>
+        <input id="f-title" type="text" placeholder="Es. Inferno, I" />
+      </div>
+      <div class="field">
+        <label>Autore</label>
+        <input id="f-author" type="text" placeholder="Es. Dante Alighieri" />
+      </div>
+      <div class="field">
+        <label>Curatore</label>
+        <input id="f-editor" type="text" placeholder="Es. Mario Rossi" />
+      </div>
+      <div class="field">
+        <label>Testimoni</label>
+        <input id="f-witnesses" type="text" placeholder="Es. A, B, C  (separati da virgola)" />
+        <span style="font-size:10px;color:var(--muted);margin-top:2px">Lascia vuoto per rilevare automaticamente i testimoni dal testo convertito.</span>
+      </div>
+      <div class="field">
+        <label>Informazioni sulla fonte</label>
+        <textarea id="f-source" placeholder="Es. Edizione basata sul ms. X, sec. XIV"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeNewXml()">Annulla</button>
+      <button class="btn secondary" onclick="generateXml()">Genera e scarica .xml</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let currentMode   = 'compact2tei'; // 'compact2tei' | 'tei2compact'
+let appCounter    = 0;
+let noteCounter   = 0;
+let collectedNotes = []; // {id, text} raccolte durante la conversione
+let collectedWits  = new Set(); // testimoni rilevati durante la conversione
+
+/* ═══════════════════════════════════════════════════════════
+   RICH TEXT EDITOR — modalità poesia/prosa, corsivo/grassetto
+═══════════════════════════════════════════════════════════ */
+let textMode = 'poetry'; // 'poetry' | 'prose'
+
+function rteFormat(cmd) {
+  document.getElementById('editor-area').focus();
+  document.execCommand(cmd, false, null);
+  updateRteButtons();
+}
+
+function updateRteButtons() {
+  document.getElementById('btn-bold').classList.toggle('active',
+    document.queryCommandState('bold'));
+  document.getElementById('btn-italic').classList.toggle('active',
+    document.queryCommandState('italic'));
+}
+
+document.addEventListener('selectionchange', updateRteButtons);
+
+function setTextMode(mode) {
+  textMode = mode;
+  document.getElementById('mode-poetry').classList.toggle('active', mode === 'poetry');
+  document.getElementById('mode-prose').classList.toggle('active',  mode === 'prose');
+  const ed = document.getElementById('editor-area');
+  ed.dataset.placeholder = mode === 'poetry'
+    ? 'Ogni riga = un verso <l>. Riga vuota = nuova strofa <lg>.'
+    : 'Ogni paragrafo separato da riga vuota = <p>. Testo continuo = prosa.';
+}
+
+/* Legge il testo dall'editor convertendo <b>/<i> in marcatori **testo** e _testo_ */
+function getEditorText() {
+  const ed = document.getElementById('editor-area');
+  function nodeToText(node) {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+    const tag = node.nodeName.toLowerCase();
+    const children = Array.from(node.childNodes).map(nodeToText).join('');
+    if (tag === 'b' || tag === 'strong') return `**${children}**`;
+    if (tag === 'i' || tag === 'em')     return `_${children}_`;
+    if (tag === 'br') return '\n';
+    if (tag === 'div' || tag === 'p')    return children + '\n';
+    return children;
+  }
+  return nodeToText(ed).replace(/\n$/, '');
+}
+
+/* Inserisce testo nell'editor convertendo **testo** e _testo_ in <strong>/<em> */
+function setEditorText(text) {
+  const ed = document.getElementById('editor-area');
+  const html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+  ed.innerHTML = html;
+}
+
+/* Converte marcatori hi in tag TEI */
+function processHi(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '<hi rend="bold">$1</hi>')
+    .replace(/_([^_]+)_/g,       '<hi rend="italic">$1</hi>');
+}
+
+/* Ctrl+B / Ctrl+I nell'editor */
+document.addEventListener('DOMContentLoaded', () => {
+  const ed = document.getElementById('editor-area');
+  if (!ed) return;
+  ed.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); rteFormat('bold'); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); rteFormat('italic'); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.execCommand('insertLineBreak');
+    }
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   MODE SWITCHING
+═══════════════════════════════════════════════════════════ */
+function setMode(mode) {
+  currentMode = mode;
+  const isC2T = mode === 'compact2tei';
+
+  document.getElementById('btn-compact2tei').classList.toggle('active', isC2T);
+  document.getElementById('btn-tei2compact').classList.toggle('active', !isC2T);
+  document.getElementById('arr1').classList.toggle('active', isC2T);
+  document.getElementById('arr2').classList.toggle('active', !isC2T);
+
+  document.getElementById('label-left').textContent  = isC2T ? 'Notazione compatta' : 'TEI / XML';
+  document.getElementById('label-right').textContent = isC2T ? 'TEI / XML'          : 'Notazione compatta';
+  document.getElementById('btn-download').style.display = isC2T ? '' : 'none';
+
+  const ed = document.getElementById('editor-area');
+  ed.dataset.placeholder = isC2T
+    ? 'Ogni riga = un verso <l>. Riga vuota = nuova strofa <lg>.'
+    : 'Incolla qui il TEI/XML da convertire in notazione compatta…';
+  ed.innerHTML = '';
+  document.getElementById('output-area').innerHTML = '';
+  document.getElementById('btn-export-tei').style.display = 'none';
+  document.getElementById('rte-toolbar').classList.toggle('hidden', !isC2T);
+  hideMsg();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPACT → TEI
+═══════════════════════════════════════════════════════════ */
+function compactToTei(input) {
+  appCounter    = 0;
+  noteCounter   = 0;
+  collectedNotes = [];
+  collectedWits  = new Set();
+  const lines    = input.split('\n');
+  const xmlLines = [];
+
+  if (textMode === 'prose') {
+    // ── MODALITÀ PROSA: paragrafi separati da riga vuota → <p> ──
+    xmlLines.push('<div type="edition">');
+    let paraCounter = 0;
+    let currentPara = [];
+    function flushPara() {
+      if (!currentPara.length) return;
+      paraCounter++;
+      const paraText  = currentPara.join(' ');
+      const processed = processHi(processLine(paraText, paraCounter));
+      xmlLines.push(`  <p n="${paraCounter}">${processed}</p>`);
+      currentPara = [];
+    }
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) { flushPara(); return; }
+      currentPara.push(trimmed);
+    });
+    flushPara();
+  } else {
+    // ── MODALITÀ POESIA: ogni riga → <l>, riga vuota → nuova <lg> ──
+    xmlLines.push('<div type="edition">');
+    xmlLines.push('  <lg>');
+    let lineCounter = 0;
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        xmlLines.push('  </lg>');
+        xmlLines.push('  <lg>');
+        return;
+      }
+      lineCounter++;
+      const teiLine = processHi(processLine(trimmed, lineCounter));
+      xmlLines.push(`    <l n="${lineCounter}">`);
+      xmlLines.push(`      ${teiLine}`);
+      xmlLines.push(`    </l>`);
+    });
+    xmlLines.push('  </lg>');
+  }
+
+  // Note in fondo al div (testo già processato con processHi + escXml)
+  collectedNotes.forEach(n => {
+    xmlLines.push(`  <note target="#${n.id}">${n.text}</note>`);
+  });
+  xmlLines.push('</div>');
+  return xmlLines.join('\n');
+}
+
+function processLine(line, lineN) {
+  // 1. Sostituisce {WIT: lem (WIT: rdg)...} con <app>...</app>
+  let processed = line.replace(/\{([^{}]+)\}/g, (match, inner) => {
+    return parseApp(inner);
+  });
+
+  // 2. Gestisce {}[: nota] — nota su lemma: seg vuoto dopo l'app precedente
+  processed = processed.replace(/\[:\s*([^\]]+?)\]/g, (match, noteText) => {
+    noteCounter++;
+    const noteId = `n${noteCounter}`;
+    // processHi sul testo della nota: _corsivo_ e **grassetto** → <hi rend="...">
+    collectedNotes.push({ id: noteId, text: processHi(escXml(noteText.trim())) });
+    return `<seg xml:id="${noteId}"/>`;
+  });
+
+  // 3. Gestisce [testo: nota] — nota su testo semplice: seg con contenuto
+  processed = processed.replace(/\[([^\]]+?):\s*([^\]]+?)\]/g, (match, segText, noteText) => {
+    noteCounter++;
+    const noteId = `n${noteCounter}`;
+    collectedNotes.push({ id: noteId, text: processHi(escXml(noteText.trim())) });
+    return `<seg xml:id="${noteId}">${escXml(segText.trim())}</seg>`;
+  });
+
+  return processed;
+}
+
+function parseApp(inner) {
+  appCounter++;
+  const appId = `v${appCounter}`;
+
+  // Lemma: WIT, WIT* o ? (congettura), seguito da testo
+  // ? indica lemma congetturale: nessun testimone reca la lezione accettata
+  const lemMatch = inner.match(/^([A-Z?][A-Z*, ]*):\s*(.*?)(?=\s*\(|$)/);
+  if (!lemMatch) return `<!-- ERRORE: ${inner} -->`;
+
+  const lemSigla = lemMatch[1].trim();
+  const isConj   = lemSigla === '?';
+  const lemText  = lemMatch[2].trim();
+
+  // Attributo wit del lemma (assente se congettura)
+  const lemWits = isConj
+    ? ''
+    : lemSigla.split(',').map(w => '#' + w.trim().replace(/\*/g, '')).join(' ');
+
+  // Varianti: (WIT*, WIT: testo) oppure (WIT: -) per omissione
+  const rdgRegex = /\(([^:]+):\s*([^)]+)\)/g;
+  const rdgs = [];
+  let m;
+  while ((m = rdgRegex.exec(inner)) !== null) {
+    const witRaw = m[1];
+    const text   = m[2].trim();
+    const isOm   = text === '-'; // omissione: elemento vuoto in TEI
+
+    const tokens = witRaw.split(',').map(t => {
+      const s    = t.trim();
+      const orth = s.endsWith('*');
+      const id   = '#' + s.replace(/\*/g, '').trim();
+      return { id, orth };
+    });
+
+    const allOrth = tokens.every(t => t.orth);
+    const allSost = tokens.every(t => !t.orth);
+
+    if (isOm) {
+      // Omissione: un rdg vuoto per ciascun testimone (o gruppo)
+      rdgs.push({
+        wit:  tokens.map(t => t.id).join(' '),
+        orth: false,
+        om:   true,
+        text: '',
+      });
+    } else if (allOrth || allSost) {
+      rdgs.push({
+        wit:  tokens.map(t => t.id).join(' '),
+        orth: allOrth,
+        om:   false,
+        text,
+      });
+    } else {
+      // Misti: rdg separato per ciascun testimone
+      tokens.forEach(t => {
+        rdgs.push({ wit: t.id, orth: t.orth, om: false, text });
+      });
+    }
+    tokens.forEach(t => collectedWits.add(t.id.replace('#', '')));
+  }
+
+  // Raccoglie wit del lemma (non per congettura)
+  if (!isConj) lemWits.split(' ').forEach(w => collectedWits.add(w.replace('#', '')));
+
+  let xml = `<app xml:id="${appId}">\n`;
+  // Lemma: se congettura omette @wit e aggiunge type="conjecture"
+  if (isConj) {
+    xml += `      <lem type="conjecture">${escXml(lemText)}</lem>\n`;
+  } else {
+    xml += `      <lem wit="${lemWits}">${escXml(lemText)}</lem>\n`;
+  }
+  rdgs.forEach(r => {
+    if (r.om) {
+      // Omissione: elemento vuoto, type="omission" non standard TEI ma leggibile;
+      // usiamo rdg vuoto senza type per massima compatibilità
+      xml += `      <rdg wit="${r.wit}"/>\n`;
+    } else {
+      const type = r.orth ? ' type="orthographic"' : ' type="substantive"';
+      xml += `      <rdg wit="${r.wit}"${type}>${escXml(r.text)}</rdg>\n`;
+    }
+  });
+  xml += `    </app>`;
+  return xml;
+}
+
+function escXml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TEI → COMPACT
+═══════════════════════════════════════════════════════════ */
+function teiToCompact(input) {
+  let xml;
+  try {
+    xml = new DOMParser().parseFromString(input, 'application/xml');
+    const err = xml.querySelector('parsererror');
+    if (err) throw new Error(err.textContent.split('\n')[0]);
+  } catch(e) {
+    throw new Error('XML non valido: ' + e.message);
+  }
+
+  const lines = [];
+
+  // Cerca <l> ovunque nel documento
+  const lEls = xml.querySelectorAll('l');
+  if (lEls.length === 0) {
+    // Nessun <l>: processa il testo libero
+    lines.push(processNode(xml.documentElement));
+  } else {
+    lEls.forEach(l => {
+      lines.push(processNode(l));
+    });
+  }
+
+  return lines.join('\n');
+}
+
+function processNode(node) {
+  let out = '';
+  node.childNodes.forEach(child => {
+    if (child.nodeType === 3) {
+      out += child.textContent;
+    } else if (child.localName === 'app') {
+      out += appToCompact(child);
+    } else if (child.localName === 'seg') {
+      // Cerca nota corrispondente nel documento
+      const segId = child.getAttribute('xml:id') || child.getAttribute('id') || '';
+      const note  = segId
+        ? node.ownerDocument?.querySelector(`note[target="#${segId}"]`)
+        : null;
+      if (note) {
+        out += `[${child.textContent.trim()}: ${note.textContent.trim()}]`;
+      } else {
+        out += processNode(child);
+      }
+    } else if (child.localName === 'choice') {
+      out += processNode(child);
+    } else if (child.localName === 'note') {
+      // Le note standalone non vengono stampate nel testo
+    } else {
+      out += child.textContent;
+    }
+  });
+  return out.replace(/\s+/g, ' ').trim();
+}
+
+function appToCompact(app) {
+  const lem = app.querySelector('lem');
+  const rdgs = Array.from(app.querySelectorAll('rdg'));
+
+  if (!lem) return '';
+
+  const lemWitRaw = (lem.getAttribute('wit') || '').replace(/#/g,'');
+  const isConj    = lem.getAttribute('type') === 'conjecture';
+  const lemSigla  = isConj ? '?' : lemWitRaw;
+  const lemText   = lem.textContent.trim();
+
+  let compact = `{${lemSigla}: ${lemText}`;
+  rdgs.forEach(r => {
+    const wit     = (r.getAttribute('wit') || '').replace(/#/g,'').replace(/\s+/g,', ');
+    const type    = r.getAttribute('type') || 'substantive';
+    const text    = r.textContent.trim();
+    const isEmpty = !text; // rdg vuoto = omissione
+    if (isEmpty) {
+      compact += ` (${wit}: -)`;
+    } else {
+      const star = type === 'orthographic' ? '*' : '';
+      // Se più testimoni con *, aggiunge * a ciascuno
+      const witStar = star
+        ? wit.split(', ').map(w => w + '*').join(', ')
+        : wit;
+      compact += ` (${witStar}: ${text})`;
+    }
+  });
+  compact += '}';
+  return compact;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SYNTAX HIGHLIGHT
+═══════════════════════════════════════════════════════════ */
+function highlightTei(xml) {
+  return xml
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/&lt;!--([\s\S]*?)--&gt;/g, '<span class="xc">&lt;!--$1--&gt;</span>')
+    .replace(/&lt;(\/?)([\w:]+)((?:\s+[\w:]+="[^"]*")*)\s*(\/??)&gt;/g, (m, slash, tag, attrs, selfClose) => {
+      const tagClass = tag === 'lem' ? 'xl' : (tag === 'rdg' ? 'xr' : 'xt');
+      const attrsHtml = attrs.replace(/([\w:]+)="([^"]*)"/g,
+        '<span class="xa">$1</span>=<span class="xv">"$2"</span>');
+      return `<span class="xt">&lt;${slash}</span><span class="${tagClass}">${tag}</span>${attrsHtml}<span class="xt">${selfClose}&gt;</span>`;
+    });
+}
+
+function highlightCompact(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\{([A-Z]+):\s/g, '<span class="ck-app">{</span><span class="ck-wit">$1</span><span class="ck-app">: </span>')
+    .replace(/\}/g, '<span class="ck-app">}</span>')
+    .replace(/\(([A-Z]+)(~?):\s/g, (m, wit, tilde) => {
+      const cls = tilde ? 'ck-tipe' : 'ck-rdg';
+      return `<span class="ck-app">(</span><span class="${cls}">${wit}${tilde}</span><span class="ck-app">: </span>`;
+    })
+    .replace(/\)/g, '<span class="ck-app">)</span>');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN CONVERT
+═══════════════════════════════════════════════════════════ */
+function convert() {
+  const rawInput = currentMode === 'compact2tei'
+    ? getEditorText().trim()
+    : document.getElementById('editor-area').innerText.trim();
+  const input = rawInput;
+  if (!input) { showMsg('Inserisci del testo nell\'area di input.', 'err'); return; }
+
+  const out = document.getElementById('output-area');
+  try {
+    if (currentMode === 'compact2tei') {
+      const result = compactToTei(input);
+      out.innerHTML = highlightTei(result);
+      out.dataset.raw = result;
+      document.getElementById('btn-export-tei').style.display = '';
+      showMsg(`Conversione completata — ${appCounter} app generati.`, 'ok');
+    } else {
+      const result = teiToCompact(input);
+      out.innerHTML = highlightCompact(result);
+      out.dataset.raw = result;
+      showMsg('Conversione completata.', 'ok');
+    }
+  } catch(e) {
+    showMsg('Errore: ' + e.message, 'err');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════ */
+function copyOutput() {
+  const raw = document.getElementById('output-area').dataset.raw || '';
+  if (!raw) { showMsg('Nulla da copiare.', 'err'); return; }
+  navigator.clipboard.writeText(raw).then(() => showMsg('Copiato negli appunti.', 'ok'));
+}
+
+function downloadOutput() {
+  const raw = document.getElementById('output-area').dataset.raw || '';
+  if (!raw) { showMsg('Nulla da scaricare.', 'err'); return; }
+  const blob = new Blob([raw], { type: 'application/xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'edizione.xml';
+  a.click();
+}
+
+function clearLeft() {
+  document.getElementById('editor-area').innerHTML = '';
+  document.getElementById('output-area').innerHTML = '';
+  document.getElementById('output-area').dataset.raw = '';
+  document.getElementById('btn-export-tei').style.display = 'none';
+  hideMsg();
+}
+
+function loadExample() {
+  if (currentMode === 'compact2tei') {
+    setEditorText(`Voi che ascoltate in {A, C: rime (B: note)} sparse il {A, C: suono (B*: sono)}
+di quei {A: sospiri (B: sospiri) (C*: suspiri)} ond'io nudriva 'l core
+in sul mio primo {?: giovenile (A: giovanile) (B: juvenile) (C: -)} errore
+quand'era in parte {A, C: altr'uom (B: -)}[: omissione significativa in B] da quel [ch'i': riferimento autobiografico] sono,`);
+  } else {
+    document.getElementById('editor-area').innerText =
+`<div type="edition">
+  <l n="1">
+    Nel mezzo del cammin di nostra <app xml:id="v1">
+      <lem wit="#A">vita</lem>
+      <rdg wit="#B" type="substantive">strada</rdg>
+      <rdg wit="#C" type="orthographic">uida</rdg>
+    </app>,
+  </l>
+  <l n="2">
+    mi ritrovai per una <app xml:id="v2">
+      <lem wit="#A">selva</lem>
+      <rdg wit="#B" type="substantive">foresta</rdg>
+    </app> oscura.
+  </l>
+</div>`;
+  }
+  document.getElementById('output-area').innerHTML = '';
+  document.getElementById('output-area').dataset.raw = '';
+  hideMsg();
+}
+
+function showMsg(text, type) {
+  const bar = document.getElementById('msg-bar');
+  bar.textContent = text;
+  bar.className = 'msg-bar ' + type;
+}
+function hideMsg() {
+  document.getElementById('msg-bar').className = 'msg-bar';
+}
+
+// Converti con Ctrl+Enter
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); convert(); }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL — CREA NUOVO XML
+═══════════════════════════════════════════════════════════ */
+function openNewXml() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('f-title').focus();
+}
+
+function closeNewXml() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeNewXml();
+}
+
+// Chiudi con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeNewXml();
+});
+
+function generateXml() {
+  const title  = document.getElementById('f-title').value.trim();
+  const author = document.getElementById('f-author').value.trim();
+  const editor = document.getElementById('f-editor').value.trim();
+  const source = document.getElementById('f-source').value.trim();
+
+  if (!title) {
+    document.getElementById('f-title').focus();
+    document.getElementById('f-title').style.borderColor = 'var(--accent)';
+    return;
+  }
+
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Usa i testimoni rilevati dalla conversione, o quelli inseriti manualmente
+  const witnessRaw = document.getElementById('f-witnesses').value.trim();
+  const manualWits = witnessRaw
+    ? witnessRaw.split(',').map(w => w.trim()).filter(Boolean)
+    : [];
+  const witIds = manualWits.length > 0
+    ? manualWits
+    : (collectedWits.size > 0 ? [...collectedWits].sort() : []);
+
+  // Genera blocco <listWit>
+  const listWitBlock = witIds.length > 0
+    ? `
+        <listWit>
+${witIds.map(w => `          <witness xml:id="${esc(w)}">${esc(w)}</witness>`).join('\n')}
+        </listWit>`
+    : `
+        <listWit>
+          <witness xml:id="A">A</witness><!-- aggiungere i testimoni -->
+        </listWit>`;
+
+  // Recupera il testo TEI già convertito (solo il contenuto interno del div edition)
+  const rawTei = document.getElementById('output-area').dataset.raw || '';
+  // Estrae il contenuto interno di <div type="edition">...</div>
+  const editionMatch = rawTei.match(/<div type="edition">([\s\S]*?)<\/div>/);
+  const editionContent = editionMatch
+    ? editionMatch[1]
+    : '\n        <!-- Inserisci qui il testo codificato -->\n      ';
+
+  const xml =
+`<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>${esc(title)}</title>${author ? `
+        <author>${esc(author)}</author>` : ''}${editor ? `
+        <editor>${esc(editor)}</editor>` : ''}
+      </titleStmt>
+      <sourceDesc>
+        <p>${esc(source) || 'Informazioni sulla fonte non specificate.'}</p>${listWitBlock}
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div type="edition">${editionContent}</div>
+    </body>
+  </text>
+</TEI>`;
+
+  const blob = new Blob([xml], { type: 'application/xml' });
+  const a    = document.createElement('a');
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g,'');
+  a.href     = URL.createObjectURL(blob);
+  a.download = (slug || 'edizione') + '.xml';
+  a.click();
+
+  closeNewXml();
+  showMsg(`File "${a.download}" generato e scaricato.`, 'ok');
+}
+</script>
+</body>
+</html>
