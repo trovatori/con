@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TEI Converter — Istruzioni</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent:  #a03f33;
+    --accent2: #3a6b8a;
+    --bg:      #fbf9f4;
+    --panel:   #f5f3ee;
+    --text:    #1a1410;
+    --muted:   #6b7280;
+    --border:  #e2ddd6;
+    --mono:    "JetBrains Mono", monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Source Sans 3", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--text); color: white; padding: 18px 48px; display: flex; align-items: baseline; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .hd-title { font-family: "Source Serif 4", serif; font-size: 1.1rem; font-weight: 300; font-style: italic; }
+  .hd-title strong { font-style: normal; font-weight: 700; color: #e8c4be; }
+  .hd-nav { display: flex; gap: 24px; }
+  .hd-nav a { font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #888; text-decoration: none; transition: color .15s; }
+  .hd-nav a:hover { color: white; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 64px 48px 96px; }
+
+  .doc-hero { border-bottom: 1px solid var(--border); padding-bottom: 48px; margin-bottom: 56px; }
+  .doc-eyebrow { font-size: 8px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .doc-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+  .doc-title { font-family: "Source Serif 4", serif; font-size: 2.4rem; font-weight: 300; line-height: 1.2; margin-bottom: 20px; }
+  .doc-title em { font-style: italic; color: var(--accent); }
+  .doc-intro { font-family: "Source Serif 4", serif; font-size: 1.05rem; line-height: 1.85; color: var(--muted); max-width: 640px; }
+
+  .toc { background: var(--panel); border: 1px solid var(--border); padding: 24px 28px; margin-bottom: 56px; }
+  .toc-label { font-size: 8px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .toc ol { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .toc li { font-size: 0.9rem; }
+  .toc a { color: var(--text); text-decoration: none; transition: color .15s; }
+  .toc a:hover { color: var(--accent); }
+
+  .doc-section { margin-bottom: 64px; }
+  .section-num { font-family: "Source Serif 4", serif; font-size: 3rem; font-weight: 200; color: var(--border); line-height: 1; margin-bottom: -8px; }
+  .section-title { font-family: "Source Serif 4", serif; font-size: 1.5rem; font-weight: 400; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 28px; }
+  .section-title em { font-style: italic; color: var(--accent); }
+
+  .prose { font-family: "Source Serif 4", serif; font-size: 1rem; line-height: 1.85; color: var(--text); }
+  .prose p { margin-bottom: 1.1rem; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { font-weight: 700; }
+  .prose em { font-style: italic; }
+
+  .syntax-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.9rem; }
+  .syntax-table thead tr { border-bottom: 2px solid var(--border); }
+  .syntax-table th { font-size: 8px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; text-align: left; }
+  .syntax-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .syntax-table tr:last-child td { border-bottom: none; }
+  .syntax-table tr:hover td { background: var(--panel); }
+  .syntax-table td:first-child { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; color: var(--text); }
+  .syntax-table td:last-child { font-family: "Source Serif 4", serif; color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+  .example-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 24px 0; }
+  .ex-pane { background: var(--bg); }
+  .ex-head { padding: 8px 14px; background: var(--panel); font-size: 8px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .ex-body { font-family: var(--mono); font-size: 11.5px; line-height: 1.75; padding: 16px; color: var(--text); white-space: pre-wrap; }
+  .ex-body .hl  { color: var(--accent); font-weight: 600; }
+  .ex-body .hl2 { color: var(--accent2); }
+  .ex-body .dim { color: #999; }
+
+  .note-box { border-left: 3px solid var(--accent); background: rgba(160,63,51,0.06); padding: 14px 18px; margin: 20px 0; font-family: "Source Serif 4", serif; font-size: 0.9rem; line-height: 1.7; color: var(--text); }
+  .note-box strong { font-family: "Source Sans 3", sans-serif; font-size: 8px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 6px; }
+
+  .step-list { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+  .step { display: flex; gap: 16px; align-items: flex-start; }
+  .step-num { font-family: "Source Serif 4", serif; font-size: 1.4rem; font-weight: 200; color: var(--accent); min-width: 28px; line-height: 1.3; }
+  .step-body { font-family: "Source Serif 4", serif; font-size: 0.95rem; line-height: 1.75; padding-top: 4px; }
+  .step-body strong { font-family: "Source Sans 3", sans-serif; font-weight: 700; font-size: 0.85rem; }
+
+  code { font-family: var(--mono); font-size: 11px; background: white; border: 1px solid var(--border); padding: 1px 5px; border-radius: 2px; color: var(--text); }
+
+  footer { border-top: 1px solid var(--border); background: var(--panel); padding: 20px 48px; display: flex; justify-content: space-between; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bbb; }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .page { padding: 40px 24px 64px; }
+    header { padding: 14px 24px; }
+    .example-pair { grid-template-columns: 1fr; }
+    footer { padding: 16px 24px; flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-title"><strong>TEI Converter</strong> — Istruzioni per l'uso</div>
+  <nav class="hd-nav">
+    <a href="tei-converter.html">← Converter</a>
+    <a href="#sintassi">Sintassi</a>
+    <a href="#toolbar">Toolbar</a>
+    <a href="#note-commento">Note</a>
+    <a href="#id">Identificatori</a>
+    <a href="#esempi">Esempi</a>
+    <a href="#flusso">Flusso di lavoro</a>
+    <a href="#tecnico">Note tecniche</a>
+  </nav>
+</header>
+
+<div class="page">
+
+  <div class="doc-hero">
+    <div class="doc-eyebrow">Laboratorio di Filologia Romanza Digitale</div>
+    <h1 class="doc-title">Guida al <em>TEI Converter</em></h1>
+    <p class="doc-intro">
+      Il TEI Converter permette di codificare testi in edizione critica usando una notazione
+      compatta leggibile, e di convertirla automaticamente in XML conforme allo standard TEI P5.
+      Supporta testi in versi e in prosa, formattazione corsivo e grassetto, note di commento,
+      e la direzione inversa: da TEI a notazione compatta.
+    </p>
+  </div>
+
+  <div class="toc">
+    <div class="toc-label">Indice</div>
+    <ol>
+      <li><a href="#sintassi">La notazione compatta — tabella di riferimento</a></li>
+      <li><a href="#toolbar">La toolbar: stile, modalità e numerazione</a></li>
+      <li><a href="#note-commento">Note di commento</a></li>
+      <li><a href="#id">Identificatori XML automatici</a></li>
+      <li><a href="#esempi">Esempi completi</a></li>
+      <li><a href="#flusso">Flusso di lavoro consigliato</a></li>
+      <li><a href="#tecnico">Note tecniche e limiti</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. SINTASSI -->
+  <section class="doc-section" id="sintassi">
+    <div class="section-num">01</div>
+    <h2 class="section-title">La notazione compatta — <em>tabella di riferimento</em></h2>
+
+    <div class="prose"><p>
+      Ogni riga del testo in ingresso corrisponde a un verso <code>&lt;l n="..."&gt;</code>
+      in modalita Poesia, o contribuisce a un paragrafo <code>&lt;p n="..."&gt;</code>
+      in modalita Prosa. Le righe vuote separano le strofe (<code>&lt;lg&gt;</code>)
+      in poesia, o i paragrafi in prosa. Le varianti si marcano inline con la sintassi
+      descritta nella tabella seguente.
+    </p></div>
+
+    <table class="syntax-table">
+      <thead><tr><th>Sintassi</th><th>Significato</th><th>TEI generato</th></tr></thead>
+      <tbody>
+        <tr><td>{A: lemma}</td><td>Lemma del testimone A</td><td><code>&lt;lem wit="#A"&gt;lemma&lt;/lem&gt;</code></td></tr>
+        <tr><td>(B: variante)</td><td>Variante sostanziale di B</td><td><code>&lt;rdg wit="#B" type="substantive"&gt;</code></td></tr>
+        <tr><td>(B*: variante)</td><td>Variante ortografica di B</td><td><code>&lt;rdg wit="#B" type="orthographic"&gt;</code></td></tr>
+        <tr><td>(B, C: variante)</td><td>B e C recano la stessa variante sostanziale</td><td><code>&lt;rdg wit="#B #C" type="substantive"&gt;</code></td></tr>
+        <tr><td>(B*, C*: variante)</td><td>B e C recano la stessa variante ortografica</td><td><code>&lt;rdg wit="#B #C" type="orthographic"&gt;</code></td></tr>
+        <tr><td>{A: lemma (B: var1) (C: var2)}</td><td>B e C recano varianti distinte: una parentesi per testimone</td><td>Due <code>&lt;rdg&gt;</code> separati</td></tr>
+        <tr><td>{A, C: lemma (B: var)}</td><td>Lemma condiviso da piu testimoni</td><td><code>&lt;lem wit="#A #C"&gt;</code></td></tr>
+        <tr><td>{?: lemma (A: var1) (B: var2)}</td><td>Lemma congetturale: i testimoni recano varianti non eleggibili a testo</td><td><code>&lt;lem type="conjecture"&gt;</code> senza <code>@wit</code></td></tr>
+        <tr><td>(B: -)</td><td>B omette (lacuna o omissione)</td><td><code>&lt;rdg wit="#B"/&gt;</code> elemento vuoto</td></tr>
+        <tr><td>_testo_</td><td>Corsivo</td><td><code>&lt;hi rend="italic"&gt;testo&lt;/hi&gt;</code></td></tr>
+        <tr><td>**testo**</td><td>Grassetto</td><td><code>&lt;hi rend="bold"&gt;testo&lt;/hi&gt;</code></td></tr>
+        <tr><td>[parola: testo nota]</td><td>Nota di commento a una parola o segmento</td><td><code>&lt;seg xml:id="n{n}a"&gt;</code> + <code>&lt;note&gt;</code></td></tr>
+        <tr><td>{app}[: testo nota]</td><td>Nota di commento a un lemma (seg vuoto dopo l'app)</td><td><code>&lt;seg xml:id="n{n}a"/&gt;</code> + <code>&lt;note&gt;</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="note-box">
+      <strong>Regola fondamentale sulle varianti distinte</strong>
+      La virgola separa testimoni che recano la stessa lezione.
+      Per varianti diverse si usano parentesi separate, una per testimone.
+      Scrivere <code>(B: sospiri, C*: suspiri)</code> e un errore: la virgola viene
+      interpretata come separatore di testimoni. La forma corretta e
+      <code>(B: sospiri) (C*: suspiri)</code>.
+    </div>
+
+    <div class="note-box">
+      <strong>Parentesi tonde nel testo</strong>
+      Le parentesi tonde nel testo non creano ambiguita se il contenuto non inizia
+      con una sigla maiuscola seguita da due punti (es. <code>A:</code>).
+      Una parentesi come <code>(cosi chiamato)</code> viene ignorata dal parser.
+      In caso di costruzioni ambigue, verificare e correggere in fase di validazione in VSCode.
+    </div>
+  </section>
+
+  <!-- 2. TOOLBAR -->
+  <section class="doc-section" id="toolbar">
+    <div class="section-num">02</div>
+    <h2 class="section-title">La toolbar: <em>stile, modalita e numerazione</em></h2>
+
+    <div class="prose">
+      <p>La toolbar sopra l'area di input contiene tre gruppi di controlli.</p>
+
+      <p><strong>Stile (B / I)</strong> — applicano grassetto e corsivo al testo selezionato,
+      come in un editor di testo. Le scorciatoie <code>Ctrl+B</code> e <code>Ctrl+I</code>
+      funzionano come in Word. Il testo appare formattato visivamente nell'editor e viene
+      convertito in <code>&lt;hi rend="bold"&gt;</code> o <code>&lt;hi rend="italic"&gt;</code>
+      nel TEI. Corsivo e grassetto possono essere usati anche nel testo delle note.</p>
+
+      <p><strong>Modalita (Poesia / Prosa)</strong> — determina la struttura TEI generata.</p>
+    </div>
+
+    <table class="syntax-table">
+      <thead><tr><th>Modalita</th><th>Struttura riga/paragrafo</th><th>Riga vuota</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Poesia</td>
+          <td>Ogni riga → <code>&lt;l n="..."&gt;</code></td>
+          <td>Chiude <code>&lt;/lg&gt;</code> e apre nuovo <code>&lt;lg&gt;</code></td>
+        </tr>
+        <tr>
+          <td>Prosa</td>
+          <td>Righe consecutive → <code>&lt;p n="..."&gt;</code></td>
+          <td>Chiude il paragrafo corrente e ne apre uno nuovo</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="prose">
+      <p><strong>Dal verso</strong> — campo numerico che imposta il numero del primo
+      verso o paragrafo. Utile quando si trascrive una strofa o una sezione alla volta:
+      se la seconda strofa inizia al verso 9, inserire <code>9</code> e il contatore
+      partira da <code>&lt;l n="9"&gt;</code>. Il valore di default e <code>1</code>
+      e si azzera automaticamente quando si clicca Pulisci.</p>
+    </div>
+  </section>
+
+  <!-- 3. NOTE -->
+  <section class="doc-section" id="note-commento">
+    <div class="section-num">03</div>
+    <h2 class="section-title">Note di <em>commento</em></h2>
+
+    <div class="prose"><p>
+      Le note di commento si codificano con la parentesi quadra <code>[]</code>.
+      Esistono due casi a seconda che la parola annotata sia testo semplice oppure
+      un lemma all'interno di un apparato.
+    </p></div>
+
+    <div class="prose"><p><strong>Nota su testo semplice</strong> — la parola annotata precede i due punti:</p></div>
+    <div class="example-pair">
+      <div class="ex-pane">
+        <div class="ex-head">Notazione compatta</div>
+        <div class="ex-body">mi ritrovai per una selva
+[<span class="hl">oscura</span>: allegoria del peccato].</div>
+      </div>
+      <div class="ex-pane">
+        <div class="ex-head">TEI generato</div>
+        <div class="ex-body"><span class="dim">&lt;l n="2"&gt;</span>
+  mi ritrovai per una selva
+  <span class="hl">&lt;seg xml:id="n2a"&gt;oscura&lt;/seg&gt;</span>.
+<span class="dim">&lt;/l&gt;</span>
+<span class="hl2">&lt;note target="#n2a"&gt;</span>allegoria del peccato<span class="hl2">&lt;/note&gt;</span></div>
+      </div>
+    </div>
+
+    <div class="prose"><p><strong>Nota su lemma</strong> — niente prima dei due punti; la nota si riferisce all'app che precede immediatamente:</p></div>
+    <div class="example-pair">
+      <div class="ex-pane">
+        <div class="ex-head">Notazione compatta</div>
+        <div class="ex-body">{A: <span class="hl">selva</span> (B: foresta)}[: allegoria del peccato]</div>
+      </div>
+      <div class="ex-pane">
+        <div class="ex-head">TEI generato</div>
+        <div class="ex-body"><span class="hl">&lt;app xml:id="v2a"&gt;
+  &lt;lem wit="#A"&gt;selva&lt;/lem&gt;
+  &lt;rdg wit="#B"&gt;foresta&lt;/rdg&gt;
+&lt;/app&gt;&lt;seg xml:id="n2a"/&gt;</span>
+<span class="hl2">&lt;note target="#n2a"&gt;</span>allegoria del peccato<span class="hl2">&lt;/note&gt;</span></div>
+      </div>
+    </div>
+
+    <div class="prose"><p><strong>Corsivo e grassetto nelle note</strong> — stessa sintassi del testo principale:</p></div>
+    <div class="example-pair">
+      <div class="ex-pane">
+        <div class="ex-head">Notazione compatta</div>
+        <div class="ex-body">[oscura: cfr. _Inf._ I 2]</div>
+      </div>
+      <div class="ex-pane">
+        <div class="ex-head">TEI generato</div>
+        <div class="ex-body">&lt;note target="#n2a"&gt;cfr. <span class="hl">&lt;hi rend="italic"&gt;Inf.&lt;/hi&gt;</span> I 2&lt;/note&gt;</div>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <strong>Note in fondo al div</strong>
+      Tutte le note vengono raccolte e posizionate in fondo al <code>&lt;div type="edition"&gt;</code>,
+      dopo l'ultimo <code>&lt;/lg&gt;</code> o l'ultimo <code>&lt;/p&gt;</code>.
+    </div>
+  </section>
+
+  <!-- 4. IDENTIFICATORI -->
+  <section class="doc-section" id="id">
+    <div class="section-num">04</div>
+    <h2 class="section-title">Identificatori <em>XML automatici</em></h2>
+
+    <div class="prose"><p>
+      Gli <code>xml:id</code> vengono assegnati in base al numero del verso
+      e alla posizione dell'elemento al suo interno. Questo sistema evita
+      sovrapposizioni tra sezioni trascritte in sessioni separate.
+    </p></div>
+
+    <table class="syntax-table">
+      <thead><tr><th>Elemento</th><th>Schema</th><th>Esempi</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>&lt;app&gt;</code></td>
+          <td><code>v{n}{lettera}</code></td>
+          <td>Primo app al verso 3 → <code>v3a</code>; secondo → <code>v3b</code></td>
+        </tr>
+        <tr>
+          <td><code>&lt;seg&gt;</code> / nota</td>
+          <td><code>n{n}{lettera}</code></td>
+          <td>Prima nota al verso 5 → <code>n5a</code>; seconda → <code>n5b</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note-box">
+      <strong>Trascrizione parziale</strong>
+      Quando si trascrive una strofa alla volta, usare il campo <em>Dal verso</em>
+      per impostare il numero corretto del primo verso. Gli identificatori seguiranno
+      la numerazione reale del testo, evitando collisioni tra sessioni diverse.
+    </div>
+  </section>
+
+  <!-- 5. ESEMPI -->
+  <section class="doc-section" id="esempi">
+    <div class="section-num">05</div>
+    <h2 class="section-title"><em>Esempi</em> completi</h2>
+
+    <div class="prose"><p><strong>Poesia</strong> — primi quattro versi del Canzoniere I di Petrarca, tre testimoni (A, B, C):</p></div>
+
+    <div class="example-pair">
+      <div class="ex-pane">
+        <div class="ex-head">Notazione compatta (input)</div>
+        <div class="ex-body">Voi che ascoltate in {A, C: <span class="hl">rime</span> (B: note)} sparse il {A, C: <span class="hl">suono</span> (B*: sono)}
+di quei {A: <span class="hl">sospiri</span> (B: sospiri) (C*: suspiri)} ond'io nudriva 'l core
+in sul mio primo {?: <span class="hl">giovenile</span> (A: giovanile) (B: juvenile) (C: -)} errore
+quand'era in parte {A, C: <span class="hl">altr'uom</span> (B: -)}[: omissione in B] da quel [ch'i': riferimento _autobiografico_] sono,</div>
+      </div>
+      <div class="ex-pane">
+        <div class="ex-head">TEI generato (semplificato)</div>
+        <div class="ex-body"><span class="dim">&lt;div type="edition"&gt;&lt;lg&gt;</span>
+  <span class="dim">&lt;l n="1"&gt;</span>… <span class="hl">&lt;app xml:id="v1a"&gt;…&lt;/app&gt;</span> … <span class="hl">&lt;app xml:id="v1b"&gt;…&lt;/app&gt;</span>
+  <span class="dim">&lt;l n="2"&gt;</span>… <span class="hl">&lt;app xml:id="v2a"&gt;…&lt;/app&gt;</span>…
+  <span class="dim">&lt;l n="3"&gt;</span>… <span class="hl">&lt;app xml:id="v3a"&gt;…&lt;/app&gt;</span>…
+  <span class="dim">&lt;l n="4"&gt;</span>… <span class="hl">&lt;app xml:id="v4a"&gt;…&lt;/app&gt;&lt;seg xml:id="n4a"/&gt;</span> … <span class="hl2">&lt;seg xml:id="n4b"&gt;ch'i'&lt;/seg&gt;</span>…
+<span class="dim">&lt;/lg&gt;</span>
+<span class="hl2">&lt;note target="#n4a"&gt;</span>omissione in B<span class="hl2">&lt;/note&gt;</span>
+<span class="hl2">&lt;note target="#n4b"&gt;</span>riferimento &lt;hi rend="italic"&gt;autobiografico&lt;/hi&gt;<span class="hl2">&lt;/note&gt;</span>
+<span class="dim">&lt;/div&gt;</span></div>
+      </div>
+    </div>
+
+    <div class="prose" style="margin-top:32px"><p><strong>Prosa</strong> — testo in prosa con varianti e nota, modalita Prosa attiva:</p></div>
+
+    <div class="example-pair">
+      <div class="ex-pane">
+        <div class="ex-head">Notazione compatta (input)</div>
+        <div class="ex-body">Nel {A: mezzo (B: centro)} del cammin di nostra vita
+mi ritrovai per una selva [oscura: allegoria del peccato].
+
+Che la diritta via era smarrita.</div>
+      </div>
+      <div class="ex-pane">
+        <div class="ex-head">TEI generato</div>
+        <div class="ex-body"><span class="dim">&lt;div type="edition"&gt;</span>
+  <span class="hl">&lt;p n="1"&gt;</span>Nel &lt;app xml:id="v1a"&gt;…&lt;/app&gt; … &lt;seg xml:id="n1a"&gt;oscura&lt;/seg&gt;.<span class="hl">&lt;/p&gt;</span>
+  <span class="hl">&lt;p n="2"&gt;</span>Che la diritta via era smarrita.<span class="hl">&lt;/p&gt;</span>
+  <span class="hl2">&lt;note target="#n1a"&gt;</span>allegoria del peccato<span class="hl2">&lt;/note&gt;</span>
+<span class="dim">&lt;/div&gt;</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. FLUSSO -->
+  <section class="doc-section" id="flusso">
+    <div class="section-num">06</div>
+    <h2 class="section-title">Flusso di lavoro <em>consigliato</em></h2>
+
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Scegli modalita e verso di partenza</strong><br>
+          Seleziona Poesia o Prosa nella toolbar. Se stai trascrivendo una sezione
+          non iniziale, imposta il numero corretto nel campo Dal verso.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Scrivi il testo in notazione compatta</strong><br>
+          Ogni riga e un verso o una riga di prosa. Usa <code>{}</code> per le varianti,
+          <code>[]</code> per le note, <code>_testo_</code> per il corsivo,
+          <code>**testo**</code> per il grassetto.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Converti</strong> (<code>Ctrl+Invio</code> o pulsante Converti)<br>
+          Verifica il TEI nel pannello destro. Gli identificatori seguono lo schema
+          <code>v{n}{lettera}</code> per gli app e <code>n{n}{lettera}</code> per le note.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Scarica o esporta</strong><br>
+          Scarica .xml salva solo il blocco <code>&lt;div type="edition"&gt;</code>.
+          Esporta come TEI genera un file TEI P5 completo con
+          <code>&lt;teiHeader&gt;</code> e <code>&lt;listWit&gt;</code> popolata
+          automaticamente dai testimoni presenti nel testo.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <strong>Verifica con il renderer inverso</strong> (modalita TEI → Compatta)<br>
+          Incolla il TEI gia codificato per ottenere la notazione compatta e
+          verificare a colpo d'occhio la correttezza dell'apparato.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. NOTE TECNICHE -->
+  <section class="doc-section" id="tecnico">
+    <div class="section-num">07</div>
+    <h2 class="section-title">Note <em>tecniche</em> e limiti</h2>
+
+    <div class="prose">
+      <p><strong>Identificatori per-verso.</strong> Gli <code>xml:id</code> seguono lo schema
+      <code>v{n}{lettera}</code> e <code>n{n}{lettera}</code> dove <code>n</code> e il numero
+      del verso e la lettera indica la posizione dell'elemento nel verso
+      (<code>a</code>, <code>b</code>, <code>c</code>...). I contatori si azzerano a ogni nuovo verso.</p>
+
+      <p><strong>Testimoni nel listWit.</strong> All'esportazione come TEI completo,
+      il <code>&lt;listWit&gt;</code> viene popolato automaticamente con le sigle
+      rilevate nel testo. Il nome esteso del manoscritto va completato in VSCode.</p>
+
+      <p><strong>Struttura delle strofe.</strong> Le righe vuote generano in poesia
+      la chiusura del <code>&lt;lg&gt;</code> corrente e l'apertura di uno nuovo.
+      In prosa chiudono il paragrafo corrente. Un testo senza righe vuote produce
+      un unico <code>&lt;lg&gt;</code> o un unico <code>&lt;p&gt;</code>.</p>
+
+      <p><strong>Corsivo e grassetto.</strong> <code>_testo_</code> genera
+      <code>&lt;hi rend="italic"&gt;</code> e <code>**testo**</code> genera
+      <code>&lt;hi rend="bold"&gt;</code>, sia nel testo che nelle note.
+      I pulsanti B/I nella toolbar applicano la formattazione visivamente
+      nell'editor e la convertono automaticamente.</p>
+
+      <p><strong>Parentesi tonde nel testo.</strong> Non creano ambiguita se
+      il contenuto non inizia con una sigla testimone seguita da due punti.
+      In caso di costruzioni ambigue, correggere in fase di validazione.</p>
+
+      <p><strong>Validazione.</strong> Il converter non valida rispetto allo schema
+      TEI ufficiale. Per la validazione completa si raccomanda VSCode con l'estensione
+      XML Language Support o oXygen XML Editor.</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span>TEI Converter · Laboratorio di Filologia Romanza Digitale</span>
+  <a href="tei-converter.html">← Apri il converter</a>
+</footer>
+
+<script>
+  function smartQuotes(str) {
+    if (!str) return str;
+    return str
+      .replace(/(^|[\s(\[{>])"([^"])/g, '$1\u201C$2')
+      .replace(/"([\s.,;:!?)\]}>]|$)/g, '\u201D$1')
+      .replace(/(\w)'(\w)/g, '$1\u2019$2')
+      .replace(/(^|[\s>])'(\w)/g, '$1\u2018$2')
+      .replace(/'/g, '\u2019');
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.parentElement.closest('code, pre, script, style')) continue;
+      const fixed = smartQuotes(node.textContent);
+      if (fixed !== node.textContent) node.textContent = fixed;
+    }
+  });
+</script>
+</body>
+</html>
